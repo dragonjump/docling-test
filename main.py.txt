@@ -1,0 +1,109 @@
+from pathlib import Path
+
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import (
+    PdfPipelineOptions,
+    TesseractCliOcrOptions,
+)
+from docling.document_converter import DocumentConverter, PdfFormatOption
+
+
+def main():
+    # Create a data folder for test documents
+    data_folder = Path(__file__).parent / "data"
+    data_folder.mkdir(exist_ok=True)
+    
+    # You can replace this with your own PDF file path
+    # For now, we'll use a placeholder path
+    input_doc_path = data_folder / "sample.pdf"
+    
+    # Check if the file exists, if not, create a placeholder
+    if not input_doc_path.exists():
+        print(f"Please place your PDF file at: {input_doc_path}")
+        print("Or modify the input_doc_path variable to point to your PDF file.")
+        return
+
+    # Example 1: Force full page OCR with table structure
+    print("=== Example 1: Force Full Page OCR ===")
+    
+    pipeline_options = PdfPipelineOptions()
+    pipeline_options.do_ocr = True
+    pipeline_options.do_table_structure = True
+    pipeline_options.table_structure_options.do_cell_matching = True
+
+    # Any of the OCR options can be used:
+    # EasyOcrOptions, TesseractOcrOptions, TesseractCliOcrOptions, 
+    # OcrMacOptions(Mac only), RapidOcrOptions
+    # ocr_options = EasyOcrOptions(force_full_page_ocr=True)
+    # ocr_options = TesseractOcrOptions(force_full_page_ocr=True)
+    # ocr_options = OcrMacOptions(force_full_page_ocr=True)
+    # ocr_options = RapidOcrOptions(force_full_page_ocr=True)
+    ocr_options = TesseractCliOcrOptions(force_full_page_ocr=True)
+    pipeline_options.ocr_options = ocr_options
+
+    converter = DocumentConverter(
+        format_options={
+            InputFormat.PDF: PdfFormatOption(
+                pipeline_options=pipeline_options,
+            )
+        }
+    )
+
+    try:
+        doc = converter.convert(input_doc_path).document
+        md = doc.export_to_markdown()
+        print("Full page OCR completed successfully!")
+        print("First 500 characters of markdown output:")
+        print(md[:500] + "..." if len(md) > 500 else md)
+        
+        # Save the markdown output
+        output_file = data_folder / "full_page_ocr_output.md"
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(md)
+        print(f"Full output saved to: {output_file}")
+        
+    except Exception as e:
+        print(f"Error in full page OCR: {e}")
+
+    print("\n" + "="*50 + "\n")
+
+    # Example 2: Automatic OCR language detection with tesseract
+    print("=== Example 2: Automatic OCR Language Detection ===")
+    
+    # Set lang=["auto"] with a tesseract OCR engine
+    # ocr_options = TesseractOcrOptions(lang=["auto"])
+    ocr_options_auto = TesseractCliOcrOptions(lang=["auto"])
+
+    pipeline_options_auto = PdfPipelineOptions(
+        do_ocr=True, 
+        force_full_page_ocr=True, 
+        ocr_options=ocr_options_auto
+    )
+
+    converter_auto = DocumentConverter(
+        format_options={
+            InputFormat.PDF: PdfFormatOption(
+                pipeline_options=pipeline_options_auto,
+            )
+        }
+    )
+
+    try:
+        doc_auto = converter_auto.convert(input_doc_path).document
+        md_auto = doc_auto.export_to_markdown()
+        print("Automatic language detection OCR completed successfully!")
+        print("First 500 characters of markdown output:")
+        print(md_auto[:500] + "..." if len(md_auto) > 500 else md_auto)
+        
+        # Save the markdown output
+        output_file_auto = data_folder / "auto_lang_detection_output.md"
+        with open(output_file_auto, 'w', encoding='utf-8') as f:
+            f.write(md_auto)
+        print(f"Full output saved to: {output_file_auto}")
+        
+    except Exception as e:
+        print(f"Error in automatic language detection: {e}")
+
+
+if __name__ == "__main__":
+    main() 

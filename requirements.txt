@@ -1,0 +1,12 @@
+docling
+easyocr
+pymupdf4llm
+pathlib
+opencv-python
+torch
+torchvision
+transformers>=4.37.0
+accelerate
+qwen-vl-utils
+pillow
+requests 
